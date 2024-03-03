@@ -139,19 +139,3 @@ class TokenAuthentication(BaseAuthentication):
 
     def authenticate_header(self, request):
         return self.keyword
-
-
-class UserTokenAuthentication(TokenAuthentication):
-
-    def authenticate(self, request):
-        jwt_payload, _ = super(UserTokenAuthentication, self).authenticate(request)
-        jwt_role = jwt_payload['role'].upper()
-        tenant_id = jwt_payload['tenant_id']
-
-        if jwt_role == self.super_admin_role_name:
-            return jwt_payload, None
-
-        tenant = tenant_base_db_queries.get_tenant_by_id(tenant_id)
-        if tenant.is_active:
-            return jwt_payload, None
-        raise custom_exceptions.AccountNotActivated()

@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "channels",
     "apis.chat",
+    "apis.clients",
     "apis.users"
 ]
 
@@ -154,6 +155,8 @@ PRIVATE_KEY = Path(f'{BASE_DIR}/signing_keys/learngual.key').read_text()
 PUBLIC_KEY = Path(f'{BASE_DIR}/signing_keys/learngual.key.pub').read_text()
 
 SIGNING_ALGORITHM = env_config['SIGNING_ALGORITHM']
+
+REFRESH_TOKEN_EXPIRY_TIME = int(env_config['REFRESH_TOKEN_EXPIRY_TIME'])
 
 ISSUER = env_config['ISSUER']
 
