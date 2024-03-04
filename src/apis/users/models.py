@@ -8,7 +8,7 @@ from django.db import models
 from django.utils import timezone
 
 from core import settings as core_settings
-from apis.base import enums as base_repo_enums, helpers as base_repo_helpers, models as base_repo_models
+from apis.base import models as base_repo_models
 from apis.users import model_helpers as user_model_helpers
 
 
@@ -19,6 +19,7 @@ class User(base_repo_models.BaseModel, AbstractUser):
     last_name = models.CharField(max_length=100, default="", blank=True)
     email = models.EmailField(max_length=100, default="", blank=True)
     username = models.EmailField(max_length=100, default="", blank=True, unique=True)  # username is an email in this context
+    password = models.CharField(max_length=240, default="", blank=True, null=True)
 
     EMAIL_FIELD = "email"
     REQUIRED_FIELDS = ["first_name", "last_name", "email"]
@@ -44,7 +45,6 @@ class User(base_repo_models.BaseModel, AbstractUser):
         payload: dict = {
             'iss': core_settings.ISSUER,
             'sub': self.id,
-            'full_name': self.get_full_name,
             'email': self.email,
             'two_fa_verified': False,
             'iat': now,

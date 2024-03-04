@@ -5,13 +5,13 @@ from rest_framework.parsers import FormParser
 
 from core import settings as core_settings
 from apis.authentication import serializers as auth_serializers
-from apis.base import helpers as base_repo_helpers, responses as base_repo_responses, views as base_repo_views
+from apis.base import responses as base_repo_responses, views as base_repo_views
 from apis.clients import models as client_models
 # from apis.otps import models as otp_models
 from apis.users import models as user_models
 
 
-class TokenAPIView(base_repo_views.BaseAPIView):
+class TokenAPIView(base_repo_views.BasicAuthenticationAPIView):
     parser_classes = [FormParser]
 
     def post(self, request, *args, **kwargs):
@@ -21,47 +21,10 @@ class TokenAPIView(base_repo_views.BaseAPIView):
             )
             if serializer.is_valid():
                 data: dict = serializer.validated_data
-                client_id: str = data['client_id']
-                client_secret: str = data['client_secret']
-                grant_type: str = data['grant_type']
-                username: str = data['username']
+                email: str = data['email']
                 password: str = data['password']
-                scope: str = data['scope']
 
-                client = client_models.Client.get_by_id(client_id)
-                if not client:
-                    errors: dict = {
-                        'error_message': 'invalid_client'
-                    }
-                    return base_repo_responses.http_response_401(
-                        'Authentication Error!', errors=errors
-                    )
-
-                if not client.validate_secret(client_secret):
-                    errors: dict = {
-                        'error_message': 'invalid_credentials'
-                    }
-                    return base_repo_responses.http_response_401(
-                        'Authentication Error!', errors=errors
-                    )
-
-                if not client.validate_grant_type(grant_type):
-                    errors: dict = {
-                        'error_message': 'invalid_grant_type'
-                    }
-                    return base_repo_responses.http_response_401(
-                        'Authentication Error!', errors=errors
-                    )
-
-                if not client.validate_scope(scope):
-                    errors: dict = {
-                        'error_message': 'invalid_scope'
-                    }
-                    return base_repo_responses.http_response_401(
-                        'Authentication Error!', errors=errors
-                    )
-
-                user = user_models.User.get_by_email(email=username)
+                user = user_models.User.get_by_email(email=email)
                 if not user:
                     errors: dict = {
                         'error_message': 'invalid_user'
@@ -86,21 +49,12 @@ class TokenAPIView(base_repo_views.BaseAPIView):
                         'Authentication Error!', errors=errors
                     )
 
-                if not user.validate_user_against_client_id(client_id):
-                    errors: dict = {
-                        'error_message': 'invalid_client_and_user!'
-                    }
-                    return base_repo_responses.http_response_401(
-                        'Authentication Error!', errors=errors
-                    )
-
                 refresh_token = client_models.RefreshToken.create(user.id)
                 response_data: dict = {
                     'access_token': user.get_token,
                     'refresh_token': refresh_token.code,
                     'token_type': 'Bearer',
-                    'expires_in': core_settings.TOKEN_EXPIRY_TIME,
-                    'scope': scope
+                    'expires_in': core_settings.TOKEN_EXPIRY_TIME
                 }
                 return base_repo_responses.http_response_200(
                     'Authentication successful!', data=response_data, headers={'Cache-Control': 'no-store'}
@@ -110,40 +64,6 @@ class TokenAPIView(base_repo_views.BaseAPIView):
             )
         except Exception as e:  # noqa
             self._log.error('TokenAPIView.post@Error')
-            self._log.error(e)
-            return base_repo_responses.http_response_500(self.server_error_msg)
-
-
-class EnableTwoFactorAuthenticationAPIView(base_repo_views.TokenAuthenticationAPIView):
-
-    def post(self, request, *args, **kwargs):
-        try:
-            user_id: str = request.user_id
-            user = user_models.User.get_by_id(id=user_id)
-            user.enable_two_fa()
-            user.save()
-            return base_repo_responses.http_response_200(
-                'Two factor authentication enabled!'
-            )
-        except Exception as e:
-            self._log.error('EnableTwoFactorAuthenticationAPIView.post@Error')
-            self._log.error(e)
-            return base_repo_responses.http_response_500(self.server_error_msg)
-
-
-class DisableTwoFactorAuthenticationAPIView(base_repo_views.TokenAuthenticationAPIView):
-
-    def post(self, request, *args, **kwargs):
-        try:
-            user_id: str = request.user_id
-            user = user_models.User.get_by_id(id=user_id)
-            user.disable_two_fa()
-            user.save()
-            return base_repo_responses.http_response_200(
-                'Two factor authentication disabled!'
-            )
-        except Exception as e:
-            self._log.error('DisableTwoFactorAuthenticationAPIView.post@Error')
             self._log.error(e)
             return base_repo_responses.http_response_500(self.server_error_msg)
 
@@ -175,85 +95,6 @@ class RefreshTokenAPIView(base_repo_views.TokenAuthenticationAPIView):
             )
         except Exception as e:  # noqa
             self._log.error('RefreshTokenAPIView.post@Error')
-            self._log.error(e)
-            return base_repo_responses.http_response_500(self.server_error_msg)
-
-
-class SendEmailConfirmationLinkAPIView(base_repo_views.BasicAuthenticationAPIView):
-
-    def post(self, request, *args, **kwargs):
-        try:
-            serializer = auth_serializers.SendEmailConfirmationLinkRequestSerializer(
-                data=request.data
-            )
-            if serializer.is_valid():
-                data = serializer.validated_data
-                email = data['email']
-                user = user_models.User.get_by_email(email=email)
-                if not user:
-                    return base_repo_responses.http_response_404(
-                        'Invalid user. Email cannot be sent for verification!'
-                    )
-                user_id = user.id
-                uid = urlsafe_base64_encode(force_bytes(user_id))
-                token = default_token_generator.make_token(user)
-                base_url: str = core_settings.BASE_URL
-                return base_repo_responses.http_response_200(
-                    'Email confirmation link sent!'
-                )
-            return base_repo_responses.http_response_400(
-                'Bad request!', errors=serializer.errors
-            )
-        except Exception as e:
-            self._log.error('SendEmailConfirmationLinkAPIView.post@Error')
-            self._log.error(e)
-            return base_repo_responses.http_response_500(self.server_error_msg)
-
-
-class VerifyEmailAPIView(base_repo_views.BasicAuthenticationAPIView):
-
-    def get(self, request, *args, **kwargs):
-        try:
-            query_params = request.query_params
-            try:
-                uid = urlsafe_base64_decode(query_params.get('uid', '')).decode()
-                user = user_models.User.get_by_id(id=uid)
-                token = query_params.get('token', '')
-                decoded_token = default_token_generator.check_token(user, token)
-            except UnicodeDecodeError:
-                return base_repo_responses.http_response_401(
-                    'Invalid email confirmation link!'
-                )
-
-            if not user:
-                return base_repo_responses.http_response_400(
-                    'Invalid email confirmation link!'
-                )
-
-            if user and decoded_token:
-                user.email_verified = True
-                user.save()
-                return base_repo_responses.http_response_200(
-                    'Email verified successfully!'
-                )
-            return base_repo_responses.http_response_400(
-                'Email confirmation link has expired!'
-            )
-        except Exception as e:
-            self._log.error('VerifyEmailAPIView.get@Error')
-            self._log.error(e)
-            return base_repo_responses.http_response_500(self.server_error_msg)
-
-
-class VerifyPhoneNumberAPIView(base_repo_views.BasicAuthenticationAPIView):
-
-    def post(self, request, *args, **kwargs):
-        try:
-            return base_repo_responses.http_response_200(
-                'Phone number verified successfully!'
-            )
-        except Exception as e:
-            self._log.error('VerifyPhoneNumberAPIView.post@Error')
             self._log.error(e)
             return base_repo_responses.http_response_500(self.server_error_msg)
 

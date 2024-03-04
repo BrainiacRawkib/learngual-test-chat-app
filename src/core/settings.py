@@ -165,3 +165,9 @@ AUDIENCE = env_config['ISSUER']  # same as the ISSUER because the Authorization 
 MAX_FILE_SIZE = 3
 
 BASE_URL: str = 'http://api-learngual-chatapp.local/'
+
+CHANNEL_LAYERS: dict = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer"
+    }
+}

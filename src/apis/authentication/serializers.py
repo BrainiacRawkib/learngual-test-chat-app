@@ -7,29 +7,8 @@ from apis.users import models as user_models
 
 
 class TokenSerializer(serializers.Serializer):  # noqa
-    client_id = serializers.CharField()
-    client_secret = serializers.CharField()
-    username = serializers.CharField()
+    email = serializers.CharField()
     password = serializers.CharField()
-    grant_type = serializers.CharField()
-    scope = serializers.CharField()
-    # redirect_uri = serializers.CharField()
-
-    def validate(self, attrs):
-        client_id = attrs['client_id']
-        grant_type = attrs['grant_type']
-        client = client_models.Client.get_by_id(client_id)
-
-        if not client:
-            raise serializers.ValidationError(
-                'invalid_client'
-            )
-
-        if not client.validate_grant_type(grant_type):
-            raise serializers.ValidationError(
-                'invalid_grant_type'
-            )
-        return attrs
 
 
 class RefreshTokenRequestSerializer(serializers.Serializer):  # noqa
@@ -89,11 +68,6 @@ class RefreshTokenRequestSerializer(serializers.Serializer):  # noqa
         if not refresh_token.is_valid(user_id):
             raise serializers.ValidationError(
                 'Invalid refresh token!'
-            )
-
-        if grant_type != client_enums.GrantTypesEnum.REFRESH_TOKEN:
-            raise serializers.ValidationError(
-                'Invalid grant type!'
             )
 
         user = user_models.User.get_by_id(id=user_id)
