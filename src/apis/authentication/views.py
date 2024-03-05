@@ -1,18 +1,19 @@
 from django.contrib.auth.tokens import default_token_generator
+from django.http import JsonResponse
+from django.shortcuts import render
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
-from rest_framework.parsers import FormParser
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 
 from core import settings as core_settings
 from apis.authentication import serializers as auth_serializers
 from apis.base import responses as base_repo_responses, views as base_repo_views
 from apis.clients import models as client_models
-# from apis.otps import models as otp_models
 from apis.users import models as user_models
 
 
 class TokenAPIView(base_repo_views.BasicAuthenticationAPIView):
-    parser_classes = [FormParser]
+    parser_classes = [FormParser, JSONParser, MultiPartParser]
 
     def post(self, request, *args, **kwargs):
         try:
@@ -56,9 +57,7 @@ class TokenAPIView(base_repo_views.BasicAuthenticationAPIView):
                     'token_type': 'Bearer',
                     'expires_in': core_settings.TOKEN_EXPIRY_TIME
                 }
-                return base_repo_responses.http_response_200(
-                    'Authentication successful!', data=response_data, headers={'Cache-Control': 'no-store'}
-                )
+                return JsonResponse(response_data, safe=False)
             return base_repo_responses.http_response_400(
                 'Bad request!', errors=serializer.errors
             )
@@ -293,3 +292,7 @@ class ResetPasswordAPIView(base_repo_views.BasicAuthenticationAPIView):
             self._log.error('ResetPasswordAPIView.post@Error')
             self._log.error(e)
             return base_repo_responses.http_response_500(self.server_error_msg)
+
+
+def login(request):
+    return render(request, template_name='login.html')

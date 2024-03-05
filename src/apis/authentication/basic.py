@@ -20,39 +20,41 @@ class BasicAuth(BasicAuthentication):
         Returns a `User` if a correct username and password have been supplied
         using HTTP Basic authentication.  Otherwise, returns `None`.
         """
-        auth = get_authorization_header(request).split()
-
-        if not auth or auth[0].lower() != b'basic':
-            msg = _("The Authorization header isn't BASIC authorization header.")
-            raise custom_exceptions.InvalidBasicHeader(msg)
-
-        if len(auth) == 1:
-            msg = _('Invalid basic header. No credentials provided.')
-            raise exceptions.AuthenticationFailed(msg)
-        elif len(auth) > 2:
-            msg = _('Invalid basic header. Credentials string should not contain spaces.')
-            raise exceptions.AuthenticationFailed(msg)
-
-        try:
-            try:
-                auth_decoded = base64.b64decode(auth[1]).decode('utf-8')
-            except UnicodeDecodeError:
-                auth_decoded = base64.b64decode(auth[1]).decode('latin-1')
-            auth_parts = auth_decoded.partition(':')
-        except (TypeError, UnicodeDecodeError, binascii.Error):
-            msg = _('Invalid basic header. Credentials not correctly base64 encoded.')
-            raise exceptions.AuthenticationFailed(msg)
-
-        userid, password = auth_parts[0], auth_parts[2]
-        return self.authenticate_credentials(userid, password, request)
+        # auth = get_authorization_header(request).split()
+        #
+        # if not auth or auth[0].lower() != b'basic':
+        #     msg = _("The Authorization header isn't BASIC authorization header.")
+        #     raise custom_exceptions.InvalidBasicHeader(msg)
+        #
+        # if len(auth) == 1:
+        #     msg = _('Invalid basic header. No credentials provided.')
+        #     raise exceptions.AuthenticationFailed(msg)
+        # elif len(auth) > 2:
+        #     msg = _('Invalid basic header. Credentials string should not contain spaces.')
+        #     raise exceptions.AuthenticationFailed(msg)
+        #
+        # try:
+        #     try:
+        #         auth_decoded = base64.b64decode(auth[1]).decode('utf-8')
+        #     except UnicodeDecodeError:
+        #         auth_decoded = base64.b64decode(auth[1]).decode('latin-1')
+        #     auth_parts = auth_decoded.partition(':')
+        # except (TypeError, UnicodeDecodeError, binascii.Error):
+        #     msg = _('Invalid basic header. Credentials not correctly base64 encoded.')
+        #     raise exceptions.AuthenticationFailed(msg)
+        #
+        # userid, password = auth_parts[0], auth_parts[2]
+        # return self.authenticate_credentials(userid, password, request)
+        pass
 
     def authenticate_credentials(self, userid, password, request=None):
         """
         Authenticate the userid and password against username and password
         with optional request for context.
         """
+        pass
 
-        client = client_models.Client.get_by_id(userid)
+        # client = client_models.Client.get_by_id(userid)
 
         # if client is None:
         #     raise exceptions.AuthenticationFailed(_('invalid_client'))
@@ -60,7 +62,7 @@ class BasicAuth(BasicAuthentication):
         # if not client.validate_secret(password):
         #     raise exceptions.AuthenticationFailed(_('invalid_client_credentials'))
 
-        return client, None
+        # return client, None
 
     def authenticate_header(self, request):
         return 'Basic realm="%s"' % self.www_authenticate_realm

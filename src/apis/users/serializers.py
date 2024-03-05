@@ -23,3 +23,12 @@ class SignupRequestSerializer(serializers.ModelSerializer):
             return user
         except Exception:
             return None
+
+    def validate(self, attrs):
+        email = attrs['email']
+        user = user_models.User.get_by_email(email)
+        if user:
+            raise serializers.ValidationError(
+                'User with email already exist!'
+            )
+        return attrs

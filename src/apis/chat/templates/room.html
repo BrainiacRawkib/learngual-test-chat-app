@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{#{% load static %}#}
+
+{% block content %}
+<textarea id="chat-log" cols="100" rows="20"></textarea><br>
+    <input id="chat-message-input" type="text" size="100"><br>
+    <input id="chat-message-submit" type="button" value="Send">
+    {{ room_name|json_script:"room-name" }}
+
+    <script>
+        let accessToken = localStorage.getItem('accessToken')
+        const roomName = JSON.parse(document.getElementById('room-name').textContent);
+
+        // note: this method of decoding token does not verify the necessary validations. Do not use on production
+        let base64Url = accessToken.split('.')[1];
+        let base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        let jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
+            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+        let decodedToken = JSON.parse(jsonPayload)
+
+        let url = `ws://${window.location.host}/ws/chat/${roomName}/?authorization=${accessToken}`
+        let requestUserId = decodedToken.sub
+
+        // connect to websocket
+        const chatSocket = new WebSocket(url);
+
+        chatSocket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+            console.log('data', data.user_id)
+            const chatLog = document.getElementById('chat-log');
+
+            const dateOptions = {hour: 'numeric', minute: 'numeric', hour12: true};
+            const datetime = new Date().toLocaleString('en', dateOptions);
+
+            const isMe = data.user_id === requestUserId
+            const source = isMe ? 'me' : 'other'
+            const name = isMe ? 'Me' : data.user_id
+
+            {#chatLog.style.float = 'right'#}
+            chatLog.innerHTML += '<div class="message ' + source + '">' +
+                      '<strong>' + name + '</strong> ' +
+                      '<span class="date">' + datetime + '</span><br>' +
+                      data.message + '</div>';
+            chatLog.scrollTop = chatLog.scrollHeight;
+
+        };
+
+        chatSocket.onclose = function(e) {
+            console.error('Chat socket closed unexpectedly');
+        };
+
+        document.querySelector('#chat-message-input').focus();
+        document.querySelector('#chat-message-input').onkeyup = function(e) {
+            if (e.key === 'Enter') {  // enter, return
+                document.querySelector('#chat-message-submit').click();
+            }
+        };
+
+        document.querySelector('#chat-message-submit').onclick = function(e) {
+            const messageInputDom = document.querySelector('#chat-message-input');
+            const message = messageInputDom.value;
+            chatSocket.send(JSON.stringify({
+                'message': message
+            }));
+            messageInputDom.value = '';
+        };
+    </script>
+{% endblock %}

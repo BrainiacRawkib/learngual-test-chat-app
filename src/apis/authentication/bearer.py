@@ -114,7 +114,6 @@ class TokenAuthentication(BaseAuthentication):
                 'sub': sub,
                 'email': decoded_jwt['email'],
                 'expiry_time': expiry_time,
-                'full_name': decoded_jwt['full_name'],
                 'issuer': decoded_jwt['iss']
             }
             return decoded_jwt_payload, None
@@ -128,7 +127,6 @@ class TokenAuthentication(BaseAuthentication):
                 'sub': sub,
                 'email': decoded_jwt['email'],
                 'expiry_time': expiry_time,
-                'full_name': decoded_jwt['full_name'],
                 'issuer': decoded_jwt['iss']
             }
             return decoded_jwt_payload, None

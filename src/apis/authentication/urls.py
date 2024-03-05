@@ -3,13 +3,18 @@ from django.urls import path
 from apis.authentication import views as auth_views
 
 
-app_name = "auth"
+app_name = "authentication"
 
 urlpatterns = [
     path(
         'token',
         auth_views.TokenAPIView.as_view(),
         name='token'
+    ),
+    path(
+        'login',
+        auth_views.login,
+        name='login'
     ),
     path(
         'password-change',

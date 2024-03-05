@@ -13,11 +13,12 @@ from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.security.websocket import AllowedHostsOriginValidator
 from django.core.asgi import get_asgi_application
 
-from apis.authentication.middleware import WebSocketJWTAuthMiddleware
 from apis.chat.routing import websocket_urlpatterns
+from apis.authentication.middleware import WebSocketJWTAuthMiddleware
 
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", f"core.settings")
+# set the environment settings before calling any application
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", 'core.settings')
 
 django_asgi_app = get_asgi_application()
 
@@ -28,14 +29,6 @@ application = ProtocolTypeRouter({
             URLRouter(
                 websocket_urlpatterns
             )
-        ),
-    ),
-    # 'websocket': OriginValidator(
-    #     WebSocketJWTAuthMiddleware(
-    #         URLRouter(
-    #             websocket_urlpatterns
-    #         )
-    #     ),
-    #     base.ALLOWED_HOSTS
-    # )
+        )
+    )
 })

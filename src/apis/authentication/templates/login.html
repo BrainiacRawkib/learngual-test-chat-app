@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+    <p id="output-message"></p>
+    <form action="{% url 'authentication:token' %}" id="login-form" method="POST">
+        {% csrf_token %}
+        <input type="email" name="email" placeholder="Email" id="email" required> <br> <br>
+        <input type="password" name="password" placeholder="Password" id="password" required> <br> <br>
+        <button id="login-button" type="submit">
+            Login
+        </button>
+    </form>
+
+<script type="text/javascript">
+  document.getElementById("login-form").addEventListener("submit", function(e){
+      e.preventDefault();
+      let email = document.getElementById("email").value;
+      let password = document.getElementById("password").value
+      const formData = new FormData();
+
+    formData.append('email', email);
+    formData.append('password', password);
+    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+    console.log(formData);
+    fetch('{% url "authentication:token" %}', {
+      method: 'POST',
+      body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+      console.log('Success:', data);
+        let token = localStorage.setItem('accessToken', data.access_token)
+        document.getElementById("email").value = "";
+        document.getElementById("password").value = "";
+        document.getElementById("output-message").innerText = "Login Successful!"
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        document.getElementById("output-message").innerText = "Sorry! There was an error submitting your credentials."
+    });
+  });
+
+</script>
+
+{% endblock %}

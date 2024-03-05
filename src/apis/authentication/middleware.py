@@ -5,6 +5,7 @@ from datetime import datetime
 from rest_framework.authentication import get_authorization_header
 from django.utils.translation import gettext_lazy as _
 
+from core import settings as core_settings
 from apis.authentication import bearer as bear_token_auth
 from apis.users import models as user_models
 from apis.base import exceptions as custom_exceptions
@@ -31,15 +32,8 @@ class TokenAuthMiddleware:
                 token_auth_payload, _ = token_auth.authenticate_token(auth_secret)
 
                 if token_auth_payload and isinstance(token_auth_payload, dict):
-                    request.tenant_type = token_auth_payload.get('tenant_type', '')
-                    request.tenant_id = token_auth_payload.get('tenant_id', '')
-                    request.tenant_name = token_auth_payload.get('tenant_name', '')
-                    request.role = token_auth_payload.get('role', '')
                     request.user_id = token_auth_payload.get('sub', '')
                     request.user_email = token_auth_payload.get('email', '')
-                    request.full_name = token_auth_payload.get('full_name', '')
-                    request.scope = token_auth_payload.get('scope', '')
-                    request.two_fa_verified = token_auth_payload.get('two_fa_verified', False)
         response = self.get_response(request)
         return response
 
@@ -62,18 +56,27 @@ class WebSocketJWTAuthMiddleware:
 
         jwt_payload, _ignore = bear_token_auth.TokenAuthentication().authenticate_token(token)
 
+        issuer = jwt_payload['issuer']
+        expiry_time = jwt_payload['expiry_time']
+
+        if datetime.now() > expiry_time:
+            # if JWT is expired, raise `Token is expired`
+            raise custom_exceptions.JWTExpired()
+
+        if issuer.lower() != core_settings.ISSUER:
+            # if issuer is invalid, raise `Invalid Token`
+            raise custom_exceptions.InvalidJWT()
+
         if jwt_payload and isinstance(jwt_payload, dict):
-            if datetime.now() > jwt_payload['expiry_time']:
+            if datetime.now() > expiry_time:
                 # if the token has expired, set the ws_user_id and ws_tenant_id to empty string
                 scope["ws_user_id"] = ''
-                scope["ws_tenant_id"] = ''
                 raise Exception('Token has expired!')
             else:
                 scope["ws_user_id"] = jwt_payload['sub']
-                scope["ws_tenant_id"] = jwt_payload['tenant_id']
 
                 userId = scope["ws_user_id"]
-                user = user_models.User.get_by_id(userId)
+                user = user_models.User.aget_by_id(userId)
                 if not user:
                     log.error('WebSocketJWTAuthMiddleware.Error')
                     raise Exception('User does not exist!')

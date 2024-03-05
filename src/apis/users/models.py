@@ -46,7 +46,6 @@ class User(base_repo_models.BaseModel, AbstractUser):
             'iss': core_settings.ISSUER,
             'sub': self.id,
             'email': self.email,
-            'two_fa_verified': False,
             'iat': now,
             'aud': aud,
             'exp': now + timedelta(seconds=core_settings.TOKEN_EXPIRY_TIME)
@@ -70,6 +69,13 @@ class User(base_repo_models.BaseModel, AbstractUser):
     def get_by_id(id: str):  # noqa
         try:
             return User.objects.get(id=id)
+        except User.DoesNotExist:
+            return None
+
+    @staticmethod
+    def aget_by_id(id: str):  # noqa
+        try:
+            return User.objects.aget(id=id)
         except User.DoesNotExist:
             return None
 

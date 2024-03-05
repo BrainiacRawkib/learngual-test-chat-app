@@ -36,7 +36,7 @@ SECRET_KEY = env_config['SECRET_KEY']
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env_config['DEBUG']
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = env_config['ALLOWED_HOSTS'].split(',')
 
 
 # Application definition
@@ -51,6 +51,8 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "corsheaders",
     "channels",
+    "apis.authentication",
+    "apis.base",
     "apis.chat",
     "apis.clients",
     "apis.users"
@@ -171,3 +173,5 @@ CHANNEL_LAYERS: dict = {
         "BACKEND": "channels.layers.InMemoryChannelLayer"
     }
 }
+
+CORS_ALLOW_ALL_ORIGINS: bool = True
