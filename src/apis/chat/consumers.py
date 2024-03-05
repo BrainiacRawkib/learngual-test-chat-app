@@ -53,5 +53,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
         # Send message to WebSocket
         await self.send(text_data=json.dumps({
             "user_id": self.scope['ws_user_id'],
-            "message": message
+            "message": message,
+            'datetime': timezone.now().isoformat()
         }))

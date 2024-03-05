@@ -1,8 +1,25 @@
-{% extends 'base.html' %}
-{#{% load static %}#}
+{#{% extends 'base.html' %}#}
 
-{% block content %}
-<textarea id="chat-log" cols="100" rows="20"></textarea><br>
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" href="{% static 'css/chat.css' %}">
+    <title>
+        Learngual Chat App | {% if title %}
+        {{ title }}
+        {% else %}
+        Home
+        {% endif %}
+    </title>
+</head>
+<body>
+    {% block content %}
+    <textarea id="chat" cols="100" rows="20"></textarea><br>
     <input id="chat-message-input" type="text" size="100"><br>
     <input id="chat-message-submit" type="button" value="Send">
     {{ room_name|json_script:"room-name" }}
@@ -28,20 +45,24 @@
         chatSocket.onmessage = function(e) {
             const data = JSON.parse(e.data);
             console.log('data', data.user_id)
-            const chatLog = document.getElementById('chat-log');
+            const chatLog = document.getElementById('chat');
 
             const dateOptions = {hour: 'numeric', minute: 'numeric', hour12: true};
-            const datetime = new Date().toLocaleString('en', dateOptions);
+            const datetime = new Date(data.datetime).toLocaleString('en', dateOptions);
 
             const isMe = data.user_id === requestUserId
             const source = isMe ? 'me' : 'other'
             const name = isMe ? 'Me' : data.user_id
 
-            {#chatLog.style.float = 'right'#}
-            chatLog.innerHTML += '<div class="message ' + source + '">' +
-                      '<strong>' + name + '</strong> ' +
-                      '<span class="date">' + datetime + '</span><br>' +
-                      data.message + '</div>';
+            {#chatLog.innerHTML += '<div class="message ' + source + '">' +#}
+            {#          '<strong>' + name + '</strong> ' +#}
+            {#          '<span class="date">' + datetime + '</span><br>' +#}
+            {#          data.message + '</div>';#}
+            if (isMe){
+                chatLog.innerHTML += '<div class="inner-chat" id="inner-chat">data.message</div>'
+                {#const innerChat = document.getElementById('inner-chat')#}
+                {#innerChat.style.float = 'right'#}
+            }
             chatLog.scrollTop = chatLog.scrollHeight;
 
         };
@@ -67,3 +88,5 @@
         };
     </script>
 {% endblock %}
+</body>
+</html>
